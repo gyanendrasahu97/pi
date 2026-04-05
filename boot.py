@@ -14,6 +14,7 @@ import subprocess
 import sys
 import time
 import os
+import shutil
 
 WEB_URL = "https://app.maheshee.online"
 SPLASH_PATH = "/opt/smart-room/splash.html"
@@ -43,8 +44,26 @@ def get_hardware_id():
 
 
 # ─────────────────────────────────────────────
-# Wait for Network (important for classrooms)
+# Network & IP
 # ─────────────────────────────────────────────
+def get_ip_address():
+    try:
+        # Try hostname -I first
+        result = subprocess.run(["hostname", "-I"], capture_output=True, text=True)
+        ips = result.stdout.strip().split()
+        if ips:
+            return ips[0]
+            
+        # Fallback to ip route get
+        result = subprocess.run(["ip", "route", "get", "1.1.1.1"], capture_output=True, text=True)
+        if result.returncode == 0:
+            parts = result.stdout.split("src ")
+            if len(parts) > 1:
+                return parts[1].split()[0]
+    except Exception:
+        pass
+    return "Offline"
+
 def wait_for_network(timeout=60):
     start = time.time()
     while time.time() - start < timeout:
@@ -103,21 +122,58 @@ def launch_chromium(url):
 
 
 # ─────────────────────────────────────────────
+# Prepare Splash Screen
+# ─────────────────────────────────────────────
+def prepare_splash_screen(hw_id, ip, target_url):
+    boot_splash_path = "/opt/smart-room/splash_boot.html"
+    
+    # Check if original template exists
+    if not os.path.exists(SPLASH_PATH):
+        # Fallback ultra-basic splash
+        with open(boot_splash_path, "w") as f:
+            f.write(f"<html><body style='background:black;color:white;'><h1>Starting...</h1><p>IP: {ip}</p><script>setTimeout(()=>window.location.replace('{target_url}'), 2500);</script></body></html>")
+        return f"file://{boot_splash_path}"
+        
+    try:
+        with open(SPLASH_PATH, "r") as f:
+            content = f.read()
+            
+        content = content.replace("<!--IP_ADDRESS-->", ip)
+        content = content.replace("<!--TARGET_URL-->", target_url)
+        content = content.replace("Connecting to classroom", "Connecting to classroom...")
+        
+        with open(boot_splash_path, "w") as f:
+            f.write(content)
+            
+        return f"file://{boot_splash_path}"
+    except Exception as e:
+        print(f"[BOOT] Failed to prepare splash: {e}")
+        return target_url
+
+# ─────────────────────────────────────────────
 # Main
 # ─────────────────────────────────────────────
 def main():
     hw_id = get_hardware_id()
-    url = f"{WEB_URL}/kiosk-auth#hardware_id={hw_id}"
-
+    
     print(f"[BOOT] Hardware ID: {hw_id}")
     print("[BOOT] Waiting for network...")
     wait_for_network()
+    
+    ip = get_ip_address()
+    print(f"[BOOT] IP Address: {ip}")
+    
+    # Pass IP as a hash parameter as well so the frontend web app can capture it
+    target_url = f"{WEB_URL}/kiosk-auth#hardware_id={hw_id}&ip={ip}"
+    
+    # Prepare local html file that shows splash logic then redirects
+    local_url = prepare_splash_screen(hw_id, ip, target_url)
 
     restart_count = 0
 
     while True:
-        print("[BOOT] Launching Chromium...")
-        exit_code = launch_chromium(url)
+        print(f"[BOOT] Launching Chromium with {local_url}...")
+        exit_code = launch_chromium(local_url)
 
         print(f"[BOOT] Chromium exited with code {exit_code}")
 

@@ -116,6 +116,19 @@
     </div>
     <p class="subtitle">Connecting to classroom</p>
     <div class="line"></div>
+    <div style="margin-top: 24px; font-family: monospace; font-size: 13px; color: rgba(255,255,255,0.4);">
+      IP: <!--IP_ADDRESS-->  
+    </div>
   </div>
+
+  <script>
+    // Wait for the IP rendering and animation, then route to web app
+    setTimeout(function() {
+      var target = "<!--TARGET_URL-->";
+      if (target && !target.startsWith("<!--")) {
+        window.location.replace(target);
+      }
+    }, 2500); // Wait 2.5s to assure visibility of IP
+  </script>
 </body>
 </html>
