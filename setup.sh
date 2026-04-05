@@ -11,9 +11,10 @@
 
 set -e
 
-INSTALL_DIR="/opt/smart-room"
-SERVICE_NAME="smart-room"
-PI_USER="pi"
+do_setup() {
+    local INSTALL_DIR="/opt/smart-room"
+    local SERVICE_NAME="smart-room"
+    local PI_USER="pi"
 
 echo "═══════════════════════════════════════════════"
 echo "  Smart Room Pi Setup"
@@ -557,3 +558,7 @@ echo ""
 echo "  Rebooting in 5 seconds..."
 sleep 5
 reboot
+}
+
+# Execute the main setup function
+do_setup
