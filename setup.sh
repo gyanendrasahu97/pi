@@ -47,6 +47,8 @@ apt-get install -y -qq \
     plymouth \
     plymouth-themes \
     x11-xserver-utils \
+    pulseaudio \
+    alsa-utils \
     python3 \
     python3-dbus \
     python3-gi \
@@ -194,12 +196,19 @@ hide-user-image=true
 default-user-image=
 EOF
 
+# Ensure user is in audio/video groups for hardware access
+usermod -aG audio,video "$PI_USER" 2>/dev/null || true
+
 # Openbox autostart — hide cursor, make background black, disable screensaver
 OPENBOX_DIR="/home/$PI_USER/.config/openbox"
 mkdir -p "$OPENBOX_DIR"
 cat > "$OPENBOX_DIR/autostart" << EOF
 # Set background pitch black immediately
 xsetroot -solid black
+
+# Start Audio Server and max out volume
+pulseaudio --start 2>/dev/null || true
+amixer -D pulse sset Master 100% unmute 2>/dev/null || amixer sset Master 100% unmute 2>/dev/null || true
 
 # Disable screen blanking / power saving
 xset s off

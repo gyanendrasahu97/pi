@@ -120,7 +120,11 @@ CHROMIUM_FLAGS = [
     "--use-gl=egl",
     "--enable-gpu-rasterization",
     "--ignore-gpu-blocklist",
-    "--enable-features=VaapiVideoDecoder",
+    
+    # Pi 3 specific optimizations (Lag reduction)
+    "--disable-smooth-scrolling",
+    "--force-device-scale-factor=1",
+    "--enable-low-end-device-mode",
 ]
 
 
