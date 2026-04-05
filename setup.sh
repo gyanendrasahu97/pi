@@ -14,7 +14,12 @@ set -e
 do_setup() {
     local INSTALL_DIR="/opt/smart-room"
     local SERVICE_NAME="smart-room"
-    local PI_USER="pi"
+    
+    # Dynamically detect the non-root user (Raspberry Pi OS default user has UID 1000)
+    local PI_USER="${SUDO_USER:-}"
+    if [ -z "$PI_USER" ] || [ "$PI_USER" = "root" ]; then
+        PI_USER=$(id -un 1000 2>/dev/null || echo "pi")
+    fi
 
 echo "═══════════════════════════════════════════════"
 echo "  Smart Room Pi Setup"
