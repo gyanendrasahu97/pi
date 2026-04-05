@@ -64,6 +64,20 @@ def get_ip_address():
         pass
     return "Offline"
 
+def get_ssh_key():
+    try:
+        # Prefer ed25519
+        with open("/etc/ssh/ssh_host_ed25519_key.pub", "r") as f:
+            return f.read().strip().split()[1] # returns the base64 part
+    except Exception:
+        pass
+    try:
+        # Fallback to rsa
+        with open("/etc/ssh/ssh_host_rsa_key.pub", "r") as f:
+            return f.read().strip().split()[1]
+    except Exception:
+        return ""
+
 def wait_for_network(timeout=60):
     start = time.time()
     while time.time() - start < timeout:
@@ -163,8 +177,12 @@ def main():
     ip = get_ip_address()
     print(f"[BOOT] IP Address: {ip}")
     
-    # Pass IP as a hash parameter as well so the frontend web app can capture it
-    target_url = f"{WEB_URL}/kiosk-auth#hardware_id={hw_id}&ip={ip}"
+    ssh_key = get_ssh_key()
+    if ssh_key:
+        print("[BOOT] Got SSH public key")
+    
+    # Pass IP and SSH key as hash parameters so the frontend web app can capture them
+    target_url = f"{WEB_URL}/kiosk-auth#hardware_id={hw_id}&ip={ip}&ssh_key={ssh_key}"
     
     # Prepare local html file that shows splash logic then redirects
     local_url = prepare_splash_screen(hw_id, ip, target_url)
