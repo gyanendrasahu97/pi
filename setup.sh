@@ -165,7 +165,7 @@ cat > "$INSTALL_DIR/splash.html" << 'SPLASH_EOF'
 <body>
   <div style="text-align:center">
     <div style="margin-bottom: 20px;">
-      <img src="logo.png" style="width: 120px; height: auto;" alt="Logo">
+      <img src="logo.png" style="width: 220px; height: auto;" alt="Logo">
     </div>
     <div class="brand">Maheshee</div>
     <p class="sub"><span class="spinner"></span>Starting Smart Room...</p>
@@ -339,10 +339,10 @@ Window.SetBackgroundTopColor(0.04, 0.03, 0.02);
 Window.SetBackgroundBottomColor(0.04, 0.03, 0.02);
 
 logo_image = Image("logo.png");
-logo_scaled = logo_image.Scale(96, 96);
+logo_scaled = logo_image.Scale(280, 280);
 logo_sprite = Sprite(logo_scaled);
-logo_sprite.SetX(Window.GetWidth() / 2 - 48);
-logo_sprite.SetY(Window.GetHeight() / 2 - 48);
+logo_sprite.SetX(Window.GetWidth() / 2 - 140);
+logo_sprite.SetY(Window.GetHeight() / 2 - 140);
 logo_sprite.SetOpacity(1);
 SCRIPTEOF
 

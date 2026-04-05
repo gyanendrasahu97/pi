@@ -113,6 +113,7 @@ CHROMIUM_FLAGS = [
     "--disable-pinch",
     "--overscroll-history-navigation=0",
     "--no-sandbox",
+    "--password-store=basic",
     # DRM / Widevine — needed for VdoCipher video playback
     "--enable-features=EncryptedMedia",
     "--enable-cdm-host-verification",
