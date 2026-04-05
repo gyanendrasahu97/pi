@@ -213,8 +213,12 @@ def main():
     if ssh_key:
         print("[BOOT] Got SSH public key")
     
+    import getpass
+    username = getpass.getuser()
+    print(f"[BOOT] User: {username}")
+    
     # Pass IP and SSH key as hash parameters so the frontend web app can capture them
-    target_url = f"{WEB_URL}/kiosk-auth#hardware_id={hw_id}&ip={ip}&ssh_key={ssh_key}"
+    target_url = f"{WEB_URL}/kiosk-auth#hardware_id={hw_id}&ip={ip}&ssh_key={ssh_key}&username={username}"
     
     # Prepare local html file that shows splash logic then redirects
     local_url = prepare_splash_screen(hw_id, ip, target_url)
