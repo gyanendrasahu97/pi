@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Room</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0A0A0F;
+    color: white;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    overflow: hidden;
+  }
+  .container {
+    text-align: center;
+    animation: fadeIn 0.8s ease-out;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Logo */
+  .logo {
+    width: 96px;
+    height: 96px;
+    margin: 0 auto 20px;
+    animation: logoPulse 2s ease-in-out infinite;
+  }
+  .logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  @keyframes logoPulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 0.9; }
+  }
+
+  /* Brand name */
+  .brand {
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    margin-bottom: 4px;
+    background: linear-gradient(135deg, #F97316, #EC4899, #8B5CF6, #3B82F6);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .tagline {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.35);
+    margin-bottom: 40px;
+  }
+
+  /* Spinner */
+  .spinner-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .spinner {
+    width: 24px; height: 24px;
+    border: 3px solid rgba(255,255,255,0.08);
+    border-top-color: #F97316;
+    border-right-color: #EC4899;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .status {
+    font-size: 15px;
+    font-weight: 400;
+    color: rgba(255,255,255,0.6);
+  }
+
+  .subtitle {
+    color: rgba(255,255,255,0.3);
+    font-size: 13px;
+    margin-top: 4px;
+  }
+
+  /* Gradient line decoration */
+  .line {
+    width: 120px;
+    height: 2px;
+    margin: 32px auto 0;
+    border-radius: 1px;
+    background: linear-gradient(90deg, transparent, #F97316, #EC4899, #8B5CF6, #3B82F6, transparent);
+    opacity: 0.4;
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">
+      <img src="logo.png" alt="Maheshee" onerror="this.parentElement.innerHTML='&#x1F393;'; this.parentElement.style.fontSize='64px';">
+    </div>
+    <div class="brand">Maheshee</div>
+    <div class="tagline">Smart Room</div>
+    <div class="spinner-wrap">
+      <div class="spinner"></div>
+      <span class="status">Starting up...</span>
+    </div>
+    <p class="subtitle">Connecting to classroom</p>
+    <div class="line"></div>
+  </div>
+</body>
+</html>

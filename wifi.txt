@@ -1,0 +1,11 @@
+# Smart Room WiFi Configuration
+# Place this file on:
+#   - USB drive (plug into Pi)
+#   - SD card boot partition (accessible from Windows/Mac)
+#   - /opt/smart-room/wifi.txt (via SSH)
+#
+# The file is auto-deleted after WiFi connects (password not left on disk).
+
+SSID=YourNetworkName
+PASSWORD=YourPassword123
+COUNTRY=IN

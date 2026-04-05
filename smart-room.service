@@ -1,0 +1,19 @@
+[Unit]
+Description=Smart Room Kiosk
+After=network-online.target graphical.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=/home/pi/.Xauthority
+ExecStartPre=/bin/sleep 5
+ExecStart=/usr/bin/python3 /opt/smart-room/boot.py
+Restart=no
+TimeoutStopSec=10
+Nice=5
+
+[Install]
+WantedBy=graphical.target
