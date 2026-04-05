@@ -49,6 +49,7 @@ apt-get install -y -qq \
     x11-xserver-utils \
     pulseaudio \
     alsa-utils \
+    zram-tools \
     python3 \
     python3-dbus \
     python3-gi \
@@ -268,8 +269,27 @@ systemctl enable lightdm.service 2>/dev/null || true
 # Ensure our user is in correct groups
 usermod -aG audio,video "$PI_USER" 2>/dev/null || true
 
-# ── 6. System Hardening for Kiosk ────────────────────────────────
-echo "[6/9] Configuring kiosk optimizations..."
+# ── 6. Advanced Video Performance Overhaul ──────────────────────
+echo "[6/9] Overhauling video playback performance..."
+
+# Force CPU Performance Governor (max 1.4GHz constantly)
+# We add this to rc.local for persistence across reboots
+if [ -f /etc/rc.local ]; then
+    if ! grep -q "scaling_governor" /etc/rc.local; then
+        sed -i '/^exit 0/i echo performance | tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor' /etc/rc.local
+    fi
+fi
+echo performance | tee /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor 2>/dev/null || true
+
+# Prepare RAM Disk (tmpfs) for Chromium User Data
+# This is key for stutter-free video on slow SD cards
+RAM_DISK_DIR="/dev/shm/chromium-kiosk"
+mkdir -p "$RAM_DISK_DIR"
+chown "$PI_USER:$PI_USER" "$RAM_DISK_DIR"
+chmod 755 "$RAM_DISK_DIR"
+
+# ── 7. System Hardening for Kiosk ────────────────────────────────
+echo "[7/9] Configuring kiosk optimizations..."
 
 # ── CLEAN BOOT: Hide ALL boot text and OS screens ────────────────
 # cmdline.txt: quiet splash + other kiosk params
@@ -365,9 +385,13 @@ SCRIPTEOF
 plymouth-set-default-theme -R smart-room 2>/dev/null || true
 
 # ── Disable unused services to speed up boot ─────────────────────
-echo "[8/9] Disabling unused services..."
+echo "[9/9] Disabling unused background services..."
 systemctl disable triggerhappy.service 2>/dev/null || true
 systemctl disable hciuart.service 2>/dev/null || true
+systemctl disable bluetooth.service 2>/dev/null || true
+systemctl disable cups.service 2>/dev/null || true
+systemctl disable avahi-daemon.service 2>/dev/null || true
+systemctl disable ModemManager.service 2>/dev/null || true
 systemctl disable avahi-daemon.service 2>/dev/null || true
 systemctl disable cups.service 2>/dev/null || true
 systemctl disable ModemManager.service 2>/dev/null || true

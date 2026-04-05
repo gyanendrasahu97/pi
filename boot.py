@@ -134,7 +134,12 @@ CHROMIUM_FLAGS = [
     
     # Memory/Buffer flags
     "--enable-zero-copy",
+    "--enable-native-gpu-memory-buffers",
     "--disable-software-rasterizer",
+    
+    # RAM Disk Redirect (Eliminates SD card bottlenecks)
+    "--user-data-dir=/dev/shm/chromium-kiosk",
+    "--disk-cache-dir=/dev/shm/chromium-kiosk/cache",
 ]
 
 
