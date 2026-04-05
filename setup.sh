@@ -175,16 +175,30 @@ cat > "$INSTALL_DIR/splash.html" << 'SPLASH_EOF'
 SPLASH_EOF
 fi
 
-# ── 4. Configure Auto-Login ──────────────────────────────────────
-echo "[4/8] Configuring auto-login..."
+# ── 4. System Infrastructure & Auto-Login ──────────────────────
+echo "[4/8] Configuring system infrastructure..."
 
-# LightDM auto-login
+# Force X11 instead of Wayland (fixes desktop showing up in Bookworm)
+raspi-config nonint do_wayland W1 2>/dev/null || true
+# Force Boot to Desktop with Auto-login
+raspi-config nonint do_boot_behaviour B4 2>/dev/null || true
+
+# LightDM auto-login & Session Override
+# We write to the main config and a snippet to ensure absolute priority
+grep -q "^\[Seat:\*\]" /etc/lightdm/lightdm.conf || echo -e "\n[Seat:*]" >> /etc/lightdm/lightdm.conf
+sed -i 's/^#\?autologin-user=.*/autologin-user='$PI_USER'/' /etc/lightdm/lightdm.conf
+sed -i 's/^#\?autologin-user-timeout=.*/autologin-user-timeout=0/' /etc/lightdm/lightdm.conf
+sed -i 's/^#\?user-session=.*/user-session=openbox/' /etc/lightdm/lightdm.conf
+sed -i 's/^#\?autologin-session=.*/autologin-session=openbox/' /etc/lightdm/lightdm.conf
+
+# Snippet backup
 mkdir -p /etc/lightdm/lightdm.conf.d
 cat > /etc/lightdm/lightdm.conf.d/50-autologin.conf << EOF
 [Seat:*]
 autologin-user=$PI_USER
 autologin-user-timeout=0
 user-session=openbox
+autologin-session=openbox
 greeter-session=lightdm-gtk-greeter
 greeter-hide-users=true
 EOF
@@ -199,38 +213,38 @@ hide-user-image=true
 default-user-image=
 EOF
 
-# Ensure user is in audio/video groups for hardware access
-usermod -aG audio,video "$PI_USER" 2>/dev/null || true
-
 # Openbox autostart — hide cursor, make background black, disable screensaver
 OPENBOX_DIR="/home/$PI_USER/.config/openbox"
 mkdir -p "$OPENBOX_DIR"
 cat > "$OPENBOX_DIR/autostart" << EOF
-# Set background pitch black immediately
+# 1. Kill any PIXEL/LXDE desktop components that might have auto-started
+pkill lxpanel 2>/dev/null || true
+pkill pcmanfm 2>/dev/null || true
+pkill lxsession 2>/dev/null || true
+
+# 2. Set background pitch black immediately
 xsetroot -solid black
 
-# Start Audio Server and max out volume
+# 3. Start Audio Server and max out volume
 pulseaudio --start 2>/dev/null || true
 amixer -D pulse sset Master 100% unmute 2>/dev/null || amixer sset Master 100% unmute 2>/dev/null || true
 
-# Disable screen blanking / power saving
+# 4. Disable screen blanking / power saving
 xset s off
 xset s noblank
 xset -dpms
 
-# Hide mouse cursor after 0.5 seconds of inactivity
-unclutter -idle 0.5 -root &
+# 5. Hide mouse cursor
+unclutter -idle 0.1 -root &
 
-# Launch the Smart Room Kiosk script
+# 6. Launch the Smart Room Kiosk script
 # We launch it here instead of systemd to ensure it has the correct X11 environment (DISPLAY=:0)
 python3 "$INSTALL_DIR/boot.py" &
 EOF
 chown -R "$PI_USER:$PI_USER" "/home/$PI_USER/.config"
 
-# Force X11 instead of Wayland (fixes desktop showing up in Bookworm)
-raspi-config nonint do_wayland W1 2>/dev/null || true
-# Force Boot to Desktop with Auto-login
-raspi-config nonint do_boot_behaviour B4 2>/dev/null || true
+# Force Openbox as the default X session
+update-alternatives --set x-window-manager /usr/bin/openbox 2>/dev/null || true
 
 # ── 5. Clean up services ─────────────────────────────────────────
 echo "[5/8] Cleaning up conflicting services..."
@@ -239,10 +253,13 @@ systemctl stop ${SERVICE_NAME}.service 2>/dev/null || true
 systemctl disable ${SERVICE_NAME}.service 2>/dev/null || true
 rm -f /etc/systemd/system/${SERVICE_NAME}.service
 
-# Disable LXDE-pi default session manager (prevents desktop taskbar)
+# Aggressively disable LXDE-pi default session manager components
 systemctl disable lxsession.service 2>/dev/null || true
 systemctl disable display-manager.service 2>/dev/null || true
 systemctl enable lightdm.service 2>/dev/null || true
+
+# Ensure our user is in correct groups
+usermod -aG audio,video "$PI_USER" 2>/dev/null || true
 
 # ── 6. System Hardening for Kiosk ────────────────────────────────
 echo "[6/9] Configuring kiosk optimizations..."
@@ -253,8 +270,12 @@ CMDLINE="/boot/cmdline.txt"
 # Also check Pi 5 / newer location
 [ ! -f "$CMDLINE" ] && CMDLINE="/boot/firmware/cmdline.txt"
 if [ -f "$CMDLINE" ]; then
-    # Add quiet + splash + consoleblank + hide logo + hide cursor + disable console output
-    for param in "quiet" "splash" "consoleblank=1" "logo.nologo" "vt.global_cursor_default=0" "loglevel=3" "console=tty3" "rd.systemd.show_status=false" "rd.udev.log_level=3"; do
+    # Aggressive "Pure Black" Boot:
+    # console=tty3: Moves boot logs to a hidden console
+    # quiet splash: Shows the Maheshee logo/black
+    # loglevel=3: Hides low-level kernel warnings
+    # rd.systemd.show_status=false: Hides [OK] Started... messages
+    for param in "quiet" "splash" "consoleblank=1" "logo.nologo" "vt.global_cursor_default=0" "loglevel=3" "console=tty3" "rd.systemd.show_status=false" "rd.udev.log_level=3" "plymouth.ignore-serial-consoles"; do
         if ! grep -q "$param" "$CMDLINE"; then
             sed -i "s/$/ $param/" "$CMDLINE"
         fi
