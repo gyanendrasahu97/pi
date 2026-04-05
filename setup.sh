@@ -218,7 +218,9 @@ xset -dpms
 # Hide mouse cursor after 0.5 seconds of inactivity
 unclutter -idle 0.5 -root &
 
-# NOTE: boot.py is launched by smart-room.service (systemd), NOT here.
+# Launch the Smart Room Kiosk script
+# We launch it here instead of systemd to ensure it has the correct X11 environment (DISPLAY=:0)
+python3 "$INSTALL_DIR/boot.py" &
 EOF
 chown -R "$PI_USER:$PI_USER" "/home/$PI_USER/.config"
 
@@ -227,30 +229,17 @@ raspi-config nonint do_wayland W1 2>/dev/null || true
 # Force Boot to Desktop with Auto-login
 raspi-config nonint do_boot_behaviour B4 2>/dev/null || true
 
-# ── 5. Install systemd Service (backup method) ──────────────────
-echo "[5/8] Installing systemd service..."
-cat > /etc/systemd/system/${SERVICE_NAME}.service << EOF
-[Unit]
-Description=Smart Room Kiosk
-After=network-online.target graphical.target
-Wants=network-online.target
+# ── 5. Clean up services ─────────────────────────────────────────
+echo "[5/8] Cleaning up conflicting services..."
+# Disable GUI launch via systemd (we now use Openbox autostart)
+systemctl stop ${SERVICE_NAME}.service 2>/dev/null || true
+systemctl disable ${SERVICE_NAME}.service 2>/dev/null || true
+rm -f /etc/systemd/system/${SERVICE_NAME}.service
 
-[Service]
-Type=simple
-User=$PI_USER
-Environment=DISPLAY=:0
-Environment=XAUTHORITY=/home/$PI_USER/.Xauthority
-ExecStartPre=/bin/sleep 5
-ExecStart=/usr/bin/python3 /opt/smart-room/boot.py
-Restart=on-failure
-RestartSec=10
-
-[Install]
-WantedBy=graphical.target
-EOF
-
-systemctl daemon-reload
-systemctl enable ${SERVICE_NAME}.service
+# Disable LXDE-pi default session manager (prevents desktop taskbar)
+systemctl disable lxsession.service 2>/dev/null || true
+systemctl disable display-manager.service 2>/dev/null || true
+systemctl enable lightdm.service 2>/dev/null || true
 
 # ── 6. System Hardening for Kiosk ────────────────────────────────
 echo "[6/9] Configuring kiosk optimizations..."
@@ -261,8 +250,8 @@ CMDLINE="/boot/cmdline.txt"
 # Also check Pi 5 / newer location
 [ ! -f "$CMDLINE" ] && CMDLINE="/boot/firmware/cmdline.txt"
 if [ -f "$CMDLINE" ]; then
-    # Add quiet + splash + consoleblank + hide logo + hide cursor
-    for param in "quiet" "splash" "consoleblank=0" "logo.nologo" "vt.global_cursor_default=0" "loglevel=0"; do
+    # Add quiet + splash + consoleblank + hide logo + hide cursor + disable console output
+    for param in "quiet" "splash" "consoleblank=1" "logo.nologo" "vt.global_cursor_default=0" "loglevel=3" "console=tty3" "rd.systemd.show_status=false" "rd.udev.log_level=3"; do
         if ! grep -q "$param" "$CMDLINE"; then
             sed -i "s/$/ $param/" "$CMDLINE"
         fi
