@@ -225,9 +225,16 @@ pkill lxsession 2>/dev/null || true
 # 2. Set background pitch black immediately
 xsetroot -solid black
 
-# 3. Start Audio Server and max out volume
+# 3. Start Audio Server, find HDMI sink, and max out volume
 pulseaudio --start 2>/dev/null || true
-amixer -D pulse sset Master 100% unmute 2>/dev/null || amixer sset Master 100% unmute 2>/dev/null || true
+# Wait for PulseAudio to breathe
+sleep 2
+# Unmute everything and specifically target HDMI if possible
+amixer -D pulse sset Master 100% unmute 2>/dev/null || true
+pactl set-sink-mute @DEFAULT_SINK@ 0 2>/dev/null || true
+pactl set-sink-volume @DEFAULT_SINK@ 100% 2>/dev/null || true
+# Fallback to direct ALSA if pulse is slow
+amixer sset 'Master' 100% unmute 2>/dev/null || amixer sset 'PCM' 100% unmute 2>/dev/null || true
 
 # 4. Disable screen blanking / power saving
 xset s off
@@ -299,6 +306,14 @@ if [ -f "$CONFIG" ]; then
     else
         echo "gpu_mem=128" >> "$CONFIG"
     fi
+
+    # Force HDMI Audio (hdmi_drive=2) & Hotplug
+    # This prevents the Pi from defaulting to the 3.5mm jack
+    for hdmiparam in "hdmi_drive=2" "hdmi_force_hotplug=1" "dtparam=audio=on"; do
+        if ! grep -q "^$hdmiparam" "$CONFIG"; then
+            echo "$hdmiparam" >> "$CONFIG"
+        fi
+    done
 
     # Enable hardware acceleration
     if ! grep -q "^dtoverlay=vc4-kms-v3d" "$CONFIG"; then
