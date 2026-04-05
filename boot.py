@@ -15,6 +15,7 @@ import sys
 import time
 import os
 import shutil
+import urllib.request
 
 WEB_URL = "https://app.maheshee.online"
 SPLASH_PATH = "/opt/smart-room/splash.html"
@@ -165,6 +166,30 @@ def prepare_splash_screen(hw_id, ip, target_url):
         return target_url
 
 # ─────────────────────────────────────────────
+# Auto Update
+# ─────────────────────────────────────────────
+def auto_update():
+    boot_url = "https://raw.githubusercontent.com/gyanendrasahu97/pi/main/boot.py"
+    try:
+        req = urllib.request.Request(boot_url, headers={'User-Agent': 'Mozilla/5.0'})
+        with urllib.request.urlopen(req, timeout=10) as response:
+            remote_code = response.read().decode('utf-8')
+            
+        with open(__file__, "r") as f:
+            local_code = f.read()
+            
+        # Check if the code is identical or a valid script
+        if remote_code and "def main()" in remote_code and local_code != remote_code:
+            print("[BOOT] Update available! Downloading and restarting...")
+            with open(__file__, "w") as f:
+                f.write(remote_code)
+            
+            # Hand over process to new script
+            os.execv(sys.executable, [sys.executable] + sys.argv)
+    except Exception as e:
+        print(f"[BOOT] Auto-update check failed: {e}")
+
+# ─────────────────────────────────────────────
 # Main
 # ─────────────────────────────────────────────
 def main():
@@ -173,6 +198,9 @@ def main():
     print(f"[BOOT] Hardware ID: {hw_id}")
     print("[BOOT] Waiting for network...")
     wait_for_network()
+    
+    # Check for script updates and apply them autonomously
+    auto_update()
     
     ip = get_ip_address()
     print(f"[BOOT] IP Address: {ip}")
