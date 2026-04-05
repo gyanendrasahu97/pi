@@ -116,15 +116,24 @@ CHROMIUM_FLAGS = [
     # DRM / Widevine — needed for VdoCipher video playback
     "--enable-features=EncryptedMedia",
     "--enable-cdm-host-verification",
+    
     # GPU acceleration — improves video decode on Pi
     "--use-gl=egl",
     "--enable-gpu-rasterization",
     "--ignore-gpu-blocklist",
     
+    # Audio Autoplay & Performance
+    "--autoplay-policy=no-user-gesture-required",
+    "--disable-features=PreloadMediaEngagementData,MediaEngagementBypassAutoplayPolicies",
+    
     # Pi 3 specific optimizations (Lag reduction)
     "--disable-smooth-scrolling",
     "--force-device-scale-factor=1",
     "--enable-low-end-device-mode",
+    
+    # Memory/Buffer flags
+    "--enable-zero-copy",
+    "--disable-software-rasterizer",
 ]
 
 

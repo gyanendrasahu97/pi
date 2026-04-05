@@ -547,6 +547,12 @@ EOF
 systemctl daemon-reload
 systemctl enable smart-room-watchdog.service
 
+# ── 9. Audio Unmute ─────────────────────────────────────────────
+echo "[9/9] Configuring audio..."
+amixer sset 'Master' 100% unmute || true
+amixer sset 'PCM' 100% unmute || true
+alsactl store || true
+
 # ── Done ─────────────────────────────────────────────────────────
 echo ""
 echo "═══════════════════════════════════════════════"
