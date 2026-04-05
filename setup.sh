@@ -42,9 +42,11 @@ apt-get install -y -qq \
     xinit \
     openbox \
     lightdm \
+    lightdm-gtk-greeter \
     unclutter \
     plymouth \
     plymouth-themes \
+    x11-xserver-utils \
     python3 \
     python3-dbus \
     python3-gi \
@@ -192,10 +194,13 @@ hide-user-image=true
 default-user-image=
 EOF
 
-# Openbox autostart — hide cursor + launch kiosk
+# Openbox autostart — hide cursor, make background black, disable screensaver
 OPENBOX_DIR="/home/$PI_USER/.config/openbox"
 mkdir -p "$OPENBOX_DIR"
 cat > "$OPENBOX_DIR/autostart" << EOF
+# Set background pitch black immediately
+xsetroot -solid black
+
 # Disable screen blanking / power saving
 xset s off
 xset s noblank
@@ -205,9 +210,13 @@ xset -dpms
 unclutter -idle 0.5 -root &
 
 # NOTE: boot.py is launched by smart-room.service (systemd), NOT here.
-# Putting it here too would launch Chromium twice.
 EOF
 chown -R "$PI_USER:$PI_USER" "/home/$PI_USER/.config"
+
+# Force X11 instead of Wayland (fixes desktop showing up in Bookworm)
+raspi-config nonint do_wayland W1 2>/dev/null || true
+# Force Boot to Desktop with Auto-login
+raspi-config nonint do_boot_behaviour B4 2>/dev/null || true
 
 # ── 5. Install systemd Service (backup method) ──────────────────
 echo "[5/8] Installing systemd service..."
