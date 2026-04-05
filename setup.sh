@@ -164,6 +164,9 @@ cat > "$INSTALL_DIR/splash.html" << 'SPLASH_EOF'
 </head>
 <body>
   <div style="text-align:center">
+    <div style="margin-bottom: 20px;">
+      <img src="logo.png" style="width: 120px; height: auto;" alt="Logo">
+    </div>
     <div class="brand">Maheshee</div>
     <p class="sub"><span class="spinner"></span>Starting Smart Room...</p>
   </div>
